@@ -1,3 +1,4 @@
 .*.sw?
 *-data.txt
 *-input.txt
+__pycache__/
