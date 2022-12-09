@@ -9,6 +9,11 @@ def main(argv0: str, args: Sequence[str]) -> None:
     raise Exception(f'Usage: {argv0} <filename>')
 
   with open(args[0], 'rt') as input_file:
+    parse_input(input_file)
+
+
+def parse_input(input_file: TextIO) -> ...:
+  for line in input_file:
     pass
 
 
