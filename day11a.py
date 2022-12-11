@@ -6,6 +6,9 @@ import sys
 from typing import TextIO
 
 
+_DETAILED_TURN = False
+
+
 @dataclasses.dataclass
 class Monkey:
   number: int
@@ -15,6 +18,7 @@ class Monkey:
   test: int
   true_target: int
   false_target: int
+  inspections: int = 0
 
 
 def main(argv0: str, args: Sequence[str]) -> None:
@@ -22,7 +26,63 @@ def main(argv0: str, args: Sequence[str]) -> None:
     raise Exception(f'Usage: {argv0} <filename>')
 
   with open(args[0], 'rt') as input_file:
-    print(parse_input(input_file))
+    monkeys = parse_input(input_file)
+    #print(monkeys)
+
+    for round_idx in range(1, 21):
+      print(f'\nStarting round {round_idx}...')
+      for idx in range(len(monkeys)):
+        monkeys = take_turn(monkeys, idx)
+      print(f'\nAfter round {round_idx}, the monkeys are holding items with these worry levels:')
+      for monkey in monkeys:
+        print(f'Monkey {monkey.number}: {", ".join(str(i) for i in monkey.items)}')
+
+    print()
+    for monkey in monkeys:
+      print(f'Monkey {monkey.number} inspected items {monkey.inspections} times')
+
+    top_2 = list(sorted(monkeys, key=lambda m: m.inspections))[-2:]
+    print('Final result: ', top_2[0].inspections * top_2[1].inspections)
+
+
+def take_turn(monkeys: list[Monkey], monkey_id: int) -> list[Monkey]:
+  current_monkey = monkeys[monkey_id]
+  if _DETAILED_TURN:
+    print(f'\nMonkey {monkey_id}:')
+  if current_monkey.operator == '+':
+    action = f'increases by {current_monkey.operand}'
+    modify = lambda x: x + current_monkey.operand
+  elif current_monkey.operator == '*':
+    action = f'is multiplied by {current_monkey.operand}'
+    modify = lambda x: x * current_monkey.operand
+  elif current_monkey.operator == '**':
+    action = f'is multiplied by itself'
+    modify = lambda x: x * x
+
+  for item in current_monkey.items:
+    current_monkey.inspections += 1
+    if _DETAILED_TURN:
+      print(f'  Monkey inspects an item with a worry level of {item}.')
+    new_worry = modify(item)
+    if _DETAILED_TURN:
+      print(f'    Worry level {action} to {new_worry}.')
+    lower_worry = new_worry // 3
+    if _DETAILED_TURN:
+      print(f'    Monkey gets bored with item. Worry level is divided by 3 to {lower_worry}.')
+    if lower_worry % current_monkey.test:
+      if _DETAILED_TURN:
+        print(f'    Current worry level is not divisible by {current_monkey.test}.')
+      target = current_monkey.false_target
+    else:
+      if _DETAILED_TURN:
+        print(f'    Current worry level is divisible by {current_monkey.test}.')
+      target = current_monkey.true_target
+    monkeys[target].items.append(lower_worry)
+    if _DETAILED_TURN:
+      print(f'    Item with worry level {lower_worry} is thrown to monkey {target}.')
+  current_monkey.items = []
+
+  return monkeys
 
 
 def parse_input(input_file: TextIO) -> list[Monkey]:
